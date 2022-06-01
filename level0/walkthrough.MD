@@ -1,6 +1,21 @@
 # Level 0
 
-- Once logged in, you will see a binary `level0`
+## Setup
+
+In this project, we used PEDA to help understand and exploit binary files. PEDA stands for Python Exploit Development Assistance for GDB, and more information can be found [here](https://github.com/longld/peda).
+
+Setup instructions:
+```
+git clone https://github.com/longld/peda.git
+
+scp -P 4242 -r peda/ level02@192.168.56.101:/tmp/
+
+chmod ugo+rwx /tmp/peda/; chmod +rwx ~; echo "source /tmp/peda/peda.py" > ~/.gdbinit
+```
+
+## The exploit
+
+Once logged in, you will see a binary `level0`.
 
 ```
 ssh level0@localhost -p 4242
@@ -26,9 +41,12 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   /home/user/level0/level0
 level0@RainFall:~$ ls
 level0
-level0@RainFall:~$ ls
+level0@RainFall:~$ ls -l
+total 732
+-rwsr-x---+ 1 level1 users 747441 Mar  6  2016 level0
 ```
-let's check the binary with the GDB
+
+Let's check the binary with the GDB...
 
 ```
 level0@RainFall:~$ gdb level0
@@ -99,7 +117,7 @@ End of assembler dump.
 gdb-peda$
 ```
 
-while looking through the assembly code, the following functions are called, and can be checked with the notation of `<>`, on the right side of the assembly code
+While looking through the assembly code, the following functions are called, and can be checked with the notation of `<>`, on the right side of the assembly code:
 - atoi
 - strdup
 - strdup
@@ -110,7 +128,7 @@ while looking through the assembly code, the following functions are called, and
 - execve
 - fwrite
 
-Below is the first setments of the code, which creates the stack frame
+Below is the first segments of the code, which creates the stack frame:
 ```
    0x08048ec0 <+0>:	push   ebp
    0x08048ec1 <+1>:	mov    ebp,esp
@@ -118,25 +136,27 @@ Below is the first setments of the code, which creates the stack frame
    0x08048ec6 <+6>:	sub    esp,0x20
 ```
 
-On this line, the address for argv[1] is accessed, and it stores the value into eax.
-``
+On line `+9`, the address for `argv[1]` is accessed, and it stores the value into `eax`.
+```
    0x08048ec9 <+9>:	mov    eax,DWORD PTR [ebp+0xc]
-``
+```
 
-now the function `atoi` is called, and it compares the return value of `atoi` with `0x1a7`(=423 in decimal). if the value is not the same (jne; jump if not equal), the code will be executed to <main+152>.
+Now the function `atoi` is called, and it compares the return value of `atoi` with `0x1a7` (423 in decimal). If the value is not the same (`jne`: jump if not equal), the code will be executed to `<main+152>`.
 ```
    0x08048ed4 <+20>:	call   0x8049710 <atoi>
    0x08048ed9 <+25>:	cmp    eax,0x1a7
    0x08048ede <+30>:	jne    0x8048f58 <main+152>
 ```
 
-let's run the program with the argument `423`
+Let's run the program with the argument 423 (the value from line `+25` that was `0x1a7` in the code):
 
 ```
 level0@RainFall:~$ ./level0 423
 $
 ```
-it pulls out a dollar sign, so let's try typing something
+
+It pulls out a dollar sign, so let's try typing something.
+
 ```
 $ ls
 ls: cannot open directory .: Permission denied
@@ -145,9 +165,9 @@ $ pwd
 $
 ```
 
-this looks like a shell, and let's try finding a password (as shown on the subject)
+This looks like a shell, and let's try finding a password (as shown on the subject).
 
-### example from subject
+Here's the example as shown in the subject:
 ```
 level0@RainFall:~$ ./level0 $(exploit)
 $ cat /home/user/level1/.pass
@@ -158,7 +178,7 @@ Password:
 level1@RainFall:~$ _
 ```
 
-### actual prompt
+Here's the actual prompt we encountered:
 ```
 $ cat /home/user/level1/.pass
 1fe8a524fa4bec01ca4ea2a869af2a02260d4a7d5fe7e7c24d8617e6dca12d3a
@@ -168,5 +188,3 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level1/level1
 level1@RainFall:~$
 ```
-
-

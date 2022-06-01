@@ -1,0 +1,25 @@
+#include <stdlib.h> // for atoi
+#include <string.h> // for strdup
+#include <unistd.h> // for getegid, geteuid
+
+int main(int argc, char *argv[])
+{
+  char *a[2];
+
+  gid_t b;
+  uid_t c;
+  if (atoi(argv[1]) == 423)
+  {
+    // return to main 152
+    a[0] = strdup("/bin/sh");
+    a[1] = NULL;
+    b = getegid();
+    c = geteuid();
+    setresgid(b, b, b);
+    setresuid(c, c, c);
+    execve("/bin/sh", a);
+  }
+  else
+    fprintf(stderr, "No !\n");
+  return (0);
+}

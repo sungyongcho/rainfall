@@ -1,0 +1,28 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void  p()
+{
+  char a[64];
+  unsigned int b;
+
+  fflush(stdout);
+  gets(a);
+
+  b = __builtin_return_address(0);
+  if ((0xb000000 & b) != 0xb0000000)
+  {
+    printf("(%p)\n", a);
+    exit(1);
+  }
+  puts(a);
+  strdup(a);
+  return;
+}
+
+int main()
+{
+  p();
+  return(0);
+}

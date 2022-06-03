@@ -1,4 +1,4 @@
-# Level 0
+# Level 2
 
 - Once logged in, you will see a binary `level2`
 
@@ -30,7 +30,7 @@ level2@RainFall:~$
 
 let's run this and see what this does
 ```
-level1@RainFall:~$ ./level2
+level2@RainFall:~$ ./level2
 
 ```
 

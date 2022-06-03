@@ -1,6 +1,6 @@
-# Level 0
+# Level 3
 
-- Once logged in, you will see a binary `level2`
+- Once logged in, you will see a binary `level3`
 
 ```
 [???] $ ssh level3@localhost -p 4242

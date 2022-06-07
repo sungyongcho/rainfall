@@ -1,12 +1,14 @@
+This is an artifact from our first attempt at reverse-engineering this level's main function.
+
 Dump of assembler code for function main:
    0x08048ec0 <+0>:	push   ebp                          # prep the stack for a new function
    0x08048ec1 <+1>:	mov    ebp,esp
    0x08048ec3 <+3>:	and    esp,0xfffffff0               # set esp to 0
-   0x08048ec6 <+6>:	sub    esp,0x20                     # subtract 32 from esp - XXX
+   0x08048ec6 <+6>:	sub    esp,0x20                     # subtract 32 from esp - allow for args
    0x08048ec9 <+9>:	mov    eax,DWORD PTR [ebp+0xc]      # access argv (ebp + 12), set that to eax
    0x08048ecc <+12>:	add    eax,0x4                    # add 4 to eax
    0x08048ecf <+15>:	mov    eax,DWORD PTR [eax]        # move the pointer value inside eax to eax
-   0x08048ed1 <+17>:	mov    DWORD PTR [esp],eax        #
+   0x08048ed1 <+17>:	mov    DWORD PTR [esp],eax
    0x08048ed4 <+20>:	call   0x8049710 <atoi>
    0x08048ed9 <+25>:	cmp    eax,0x1a7
    0x08048ede <+30>:	jne    0x8048f58 <main+152>

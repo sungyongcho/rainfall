@@ -1,6 +1,18 @@
-# Level 0
+# General introduction
+
+Welcome to our Rainfall walkthrough!
+
+## The team
+
+While I am correcting this project on my own at 42 Paris, I did this project's exercises with [Sungyong (@sucho)](https://profile.intra.42.fr/users/sucho), and this GitHub repo has been a collaboration between both of us.
 
 ## Setup
+
+### The .iso
+
+We set up a VirtualBox with the `.iso` and created a port forwarding rule to forward port `4444` to `4242` to make it easier to work with the virtual machine.
+
+### PEDA
 
 In this project, we used PEDA to help understand and exploit binary files. PEDA stands for Python Exploit Development Assistance for GDB, and more information can be found [here](https://github.com/longld/peda).
 
@@ -8,17 +20,36 @@ Setup instructions:
 ```
 git clone https://github.com/longld/peda.git
 
-scp -P 4242 -r peda/ level02@192.168.56.101:/tmp/
+# password: level0
+scp -P 4444 -r peda/ level0@localhost:/tmp/
 
-chmod ugo+rwx /tmp/peda/; chmod +rwx ~; echo "source /tmp/peda/peda.py" > ~/.gdbinit
+chmod +rwx /tmp/peda/; chmod +rwx ~; echo "source /tmp/peda/peda.py" > ~/.gdbinit
 ```
+
+## General process
+
+In solving Rainfall's puzzles (including level 0), we generally relied on the following process to make progress:
+
+1. Try running the binary with various arguments and note the results
+2. Use GDB to disassemble the functions we found with `info functions` in GDB.
+3. Manually reverse-engineer the assembly into something similar in C
+4. Research any vulnerable functions found in the disassembly/reverse-engineering (`printf`, `strcpy`, etc.)
+5. Use GDB and PEDA while the program is running to trace functionality view stack/memory addresses.
+6. Exploit any vulnerabilities found
+7. Document our findings and successes (not so much our failures, of which there were many)
+
+## Caveats
+
+Any reverse-engineered C code in this project is not necessarily complete and has not been tested. It serves only to better understand the respective binary's functionality.
+
+# Level 0
 
 ## The exploit
 
-Once logged in, you will see a binary `level0`.
+Once logged in, you will see a binary called `level0`.
 
 ```
-ssh level0@localhost -p 4242
+ssh level0@localhost -p 4444
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -46,6 +77,8 @@ total 732
 -rwsr-x---+ 1 level1 users 747441 Mar  6  2016 level0
 ```
 
+XXX: add something about the s flag
+
 Let's check the binary with the GDB...
 
 ```
@@ -61,7 +94,7 @@ For bug reporting instructions, please see:
 <http://bugs.launchpad.net/gdb-linaro/>...
 Reading symbols from /home/user/level0/level0...(no debugging symbols found)...done.
 gdb-peda$
-gdb-peda$ set disassembly-flavor intel
+gdb-peda$ set disassembly-flavor intel  # NOTE: this is before we found PEDA
 gdb-peda$ disassemble main
 Dump of assembler code for function main:
    0x08048ec0 <+0>:	push   ebp
@@ -117,7 +150,7 @@ End of assembler dump.
 gdb-peda$
 ```
 
-While looking through the assembly code, the following functions are called, and can be checked with the notation of `<>`, on the right side of the assembly code:
+While looking through the assembly code, the following functions are called that are labeled with bracket notation (`<>`) on the right side of the assembly code:
 - atoi
 - strdup
 - strdup
@@ -128,7 +161,7 @@ While looking through the assembly code, the following functions are called, and
 - execve
 - fwrite
 
-Below is the first segments of the code, which creates the stack frame:
+Below is the first segment of code that creates the stack frame:
 ```
    0x08048ec0 <+0>:	push   ebp
    0x08048ec1 <+1>:	mov    ebp,esp
@@ -141,7 +174,7 @@ On line `+9`, the address for `argv[1]` is accessed, and it stores the value int
    0x08048ec9 <+9>:	mov    eax,DWORD PTR [ebp+0xc]
 ```
 
-Now the function `atoi` is called, and it compares the return value of `atoi` with `0x1a7` (423 in decimal). If the value is not the same (`jne`: jump if not equal), the code will be executed to `<main+152>`.
+Then the function `atoi` is called, and it compares the return value of `atoi` with `0x1a7` (`423` in decimal). If the value is not the same (`jne`: jump if not equal), the code will jump to `<main+152>`.
 ```
    0x08048ed4 <+20>:	call   0x8049710 <atoi>
    0x08048ed9 <+25>:	cmp    eax,0x1a7
@@ -155,7 +188,7 @@ level0@RainFall:~$ ./level0 423
 $
 ```
 
-It pulls out a dollar sign, so let's try typing something.
+It prints a dollar sign, so let's try typing something.
 
 ```
 $ ls
@@ -165,9 +198,9 @@ $ pwd
 $
 ```
 
-This looks like a shell, and let's try finding a password (as shown on the subject).
+This looks like a shell, and let's try finding the password (as shown on the subject).
 
-Here's the example as shown in the subject:
+##### The subject
 ```
 level0@RainFall:~$ ./level0 $(exploit)
 $ cat /home/user/level1/.pass
@@ -178,7 +211,7 @@ Password:
 level1@RainFall:~$ _
 ```
 
-Here's the actual prompt we encountered:
+##### The prompt we encountered
 ```
 $ cat /home/user/level1/.pass
 1fe8a524fa4bec01ca4ea2a869af2a02260d4a7d5fe7e7c24d8617e6dca12d3a
@@ -188,3 +221,5 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level1/level1
 level1@RainFall:~$
 ```
+
+We did it!

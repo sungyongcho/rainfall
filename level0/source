@@ -5,21 +5,23 @@
 int main(int argc, char *argv[])
 {
   char *a[2];
-
   gid_t b;
   uid_t c;
-  if (atoi(argv[1]) == 423)
-  {
+
+  if (atoi(argv[1]) == 423) {
     // return to main 152
     a[0] = strdup("/bin/sh");
     a[1] = NULL;
+    // NOTE: we didn't bother figuring out some args here as we were
+    //       relatively sure what was happening
     b = getegid();
     c = geteuid();
     setresgid(b, b, b);
     setresuid(c, c, c);
     execve("/bin/sh", a);
-  }
-  else
+  } else {
     fprintf(stderr, "No !\n");
+  }
+
   return (0);
 }

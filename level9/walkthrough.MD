@@ -190,7 +190,7 @@ EFLAGS: 0x210287 (CARRY PARITY adjust zero SIGN trap INTERRUPT direction overflo
 
 by using [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), we can find out the offset is 108 (using eax)
 
-In order to do that we must find the start address of our buffer and replace the value of esp+0x10 by it to make the call of edx calls our shellcode. But, because we need to dereference twice like we want to access to the N class, our return address should points to an address which points to the start buffer XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+In order to do that we must find the start address of our buffer and replace the value of esp+0x10 by it to make the call of edx calls our shellcode. But, because we need to dereference twice [XXX: Teo to add something about the gdb and dereferencing twice] like we want to access to the N class, our return address should points to an address which points to the start buffer XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
 after calling the setAnnotation(<_ZN1N13setAnnotationEPc>), the value of `[esp+0x10]` will be replaced with `0x804a00c`.

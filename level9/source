@@ -1,0 +1,38 @@
+#include <cstring>
+#include <iostream>
+
+class N
+{
+  public:
+  N(int num) {
+    (*this).num = num;
+  }
+  int operator+(N &ret){
+    return (*this).num + ret.num;
+  }
+  int operator-(N &ret){
+    return (*this).num -ret.num;
+  }
+  void setAnnotation(char *param){
+    size_t __n;
+
+    __n = strlen(param);
+    memcpy(buf, param, __n);
+  }
+  private:
+    char buf[100];
+    int num;
+}
+
+int main(int argc, char *argv[])
+{
+
+  if (argc < 2)
+    _exit(1);
+
+  N *a = new N(5);
+  N *b = new N(6);
+
+  (*a).setAnnotation(argv[1]);
+  return *a + *b;
+}

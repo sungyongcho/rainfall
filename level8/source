@@ -1,0 +1,30 @@
+char *service = NULL;
+char *auth = NULL;
+
+int main()
+{
+  char buf[0xa0];
+  printf("%p, %p \n", service, auth);
+
+  if (fgets(buf, 0x80, stdin) == (test eax, eax == cmp eax,0 == null))
+    break;
+
+  if (strncmp(buf, "auth ", 5) == (eax == 0))
+	{
+			auth = malloc(4);
+			auth[0] = 0;
+			if (strlen(buffer + 5) <= 30)
+				strcpy(auth, buffer + 5);
+		}
+		if (strncmp(buffer, "reset", 5) == 0)
+			free(auth);
+		if (strncmp(buffer, "service", 6) == 0)
+			service = strdup(buffer + 7);
+		if (strncmp(buffer, "login", 5) == 0)
+		{
+			if (auth[32] != 0)
+				system("/bin/sh");
+			else
+				fwrite("Password:\n", 10, 1, stdout);
+		}
+}

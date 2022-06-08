@@ -1,0 +1,39 @@
+void p(char *a, char *b);
+{
+  char buf[4096];
+
+  puts(b);
+  read(0, buf, 0x1000);
+  *strchr(buf, 0xa) = 0;
+
+  strncpy(name, buf, 20);
+}
+
+
+void pp(char *buf)
+{
+  char buf_1[20];
+  char buf_2[20];
+  unsigned int len;
+
+  p(" - ", buf_1);
+  p(" - ", buf_2);
+
+  strcpy(buf, buf_1);
+
+  len = strlen(buf);
+  buf[len] = ' ';
+  buf[len + 1] = '\0';
+
+  strcat(buf, " ");
+
+}
+
+
+int main()
+{
+  char buf[42]; // 0x40-0x16
+  pp(buf);
+  puts(buf);
+  return (0);
+}

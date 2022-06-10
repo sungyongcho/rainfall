@@ -1,7 +1,4 @@
-
 Go through each level
-7
-8
 9
 
 Check for xxx
@@ -22,5 +19,6 @@ At 42:
 - check once more for XXX
 - branch and delete bonus folders
 - delete peda_setup.sh
+- delete delete-me
 - delete .vscode
 - delete this file

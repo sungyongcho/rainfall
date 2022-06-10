@@ -33,7 +33,7 @@ void n(void) {
   // char *fgets(char *s, int size, FILE *stream);
   fgets(buffer, 512, stdin);
 
-  p(buffer);
+  p(buffer); // XXX: add disassembled of p
 
   if (m == 16930116) {
     system("/bin/cat /home/user/level5/.pass");

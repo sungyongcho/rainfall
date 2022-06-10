@@ -5,12 +5,13 @@
 void  p()
 {
   char a[64];
-  void* b;
+  unsigned int b;
 
   fflush(stdout);
+  gets(a);
 
-  b = gets(a);
-  if ((0xb000000 & (int)b) != 0xb0000000)
+  b = __builtin_return_address(0); // XXX: how did we get this?
+  if ((0xb000000 & b) != 0xb0000000)
   {
     printf("(%p)\n", a);
     exit(1);

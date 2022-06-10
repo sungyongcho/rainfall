@@ -23,6 +23,7 @@ git clone https://github.com/longld/peda.git
 # password: level0
 scp -P 4444 -r peda/ level0@localhost:/tmp/
 
+# NOTE: this will come in handy in future levels!
 chmod +rwx /tmp/peda/; chmod +rwx ~; echo "source /tmp/peda/peda.py" > ~/.gdbinit
 ```
 

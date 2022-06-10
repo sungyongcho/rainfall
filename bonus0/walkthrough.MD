@@ -27,6 +27,7 @@ No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RU
 bonus0@RainFall:~$ ls
 bonus0
 bonus0@RainFall:~$
+```
 
 let's execute and see what this does
 
@@ -69,4 +70,23 @@ Non-debugging symbols:
 [...]
 ```
 
-by analyzing the source code, we can see the source code is
+by analyzing the source code, we can see the the program ins using `strcpy(), strcat()`, which both are vulnerable for buffer overflow attack.
+
+the program first calls function `pp`, and from function `pp` it calles `p` function.
+
+From function `p`, it frist prints prints `" - "` on screen, and gets input with buffer size of 0x1000 from stdin. Once it copies into the buffer, if the buffer contains `newline; nl; '\n'`, it will set value where `\n` was placed into 0(=NULL; \0) and copies back 20 bytes back into first parameter of function.
+
+by checking the output, the two buffers are stored next to each other. As the strncpy() is call to copy the first 20 bytes, but on the man page,
+
+```
+ If stpncpy() does not terminate dst with a
+     NUL character, it instead returns a pointer to dst[n] (which
+     does not necessarily refer to a valid memory location.)
+```
+
+And as the buffer is next to each other, `strcat()` function will consider the second string as the part of the first string.
+
+We inject 4095 random caracters followed by a \n (because there is an unchecked strchr using it later). Then we will inject an overflow pattern to find where the RET address is replaced.
+
+
+-------------xxxxxxxxxxxxxxxxxxx----------------------

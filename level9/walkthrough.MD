@@ -1,6 +1,6 @@
 # Level 9
 
-- Once logged in, you will see a binary `level9`
+Once logged in, you will see a binary `level9`.
 
 ```
 [???]$ ssh localhost -p 4242 -l level9

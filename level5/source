@@ -1,7 +1,6 @@
-
 void o(){
   system("/bin/sh");
-  _exit(1);
+  _exit(1);  // NOTE: not exit()
 }
 
 void n()

@@ -1,0 +1,26 @@
+
+Go through each level
+7
+8
+9
+
+Check for xxx
+
+Walk through each level myself at 42: check flag, commands, reading
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+
+At 42:
+- check once more for XXX
+- branch and delete bonus folders
+- delete peda_setup.sh
+- delete .vscode
+- delete this file

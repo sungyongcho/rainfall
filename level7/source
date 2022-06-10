@@ -10,15 +10,15 @@ void m(void) {
 }
 
 int main(int argc, char *argv[]) {
-  int *a;
-  int *b;
+  int *first;
+  int *second;
 
-  b = malloc(8);
-  b[0] = 2;
-  b[1] = (int)malloc(8);
+  second = malloc(8);
+  second[0] = 2;
+  second[1] = (int)malloc(8);
 
-  strcpy((char *)a[1], argv[1]);
-  strcpy((char *)b[1], argv[2]);
+  strcpy((char *)first[1], argv[1]);
+  strcpy((char *)second[1], argv[2]);
 
   fgets(c, 68, fopen("/home/user/level8/.pass", "r"));
 

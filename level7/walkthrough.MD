@@ -1,9 +1,9 @@
 # Level 7
 
-- Once logged in, you will see a binary `level7`
+Once logged in, you will see a binary `level7`.
 
 ```
-[???]$ ssh localhost -p 4242 -l level7
+$ ssh localhost -p 4242 -l level7
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -30,7 +30,7 @@ level7@RainFall:~$ ls
 level7
 ```
 
-let's run this and see what this does
+Let's run this and see what it does.
 
 ```
 level7@RainFall:~$ ls
@@ -42,7 +42,7 @@ Segmentation fault (core dumped)
 level7@RainFall:~$
 ```
 
-It gives segfault, and we want to avoid having it, so let's take a look at the binary
+It gives segmentation fault, and we want to avoid having it, so let's take a look at the binary.
 
 ```
 level7@RainFall:~$ gdb ./level7
@@ -118,7 +118,7 @@ End of assembler dump.
 gdb-peda$
 ```
 
-By analiyzing the main function, the main funciton takes arguments(`argv`) from `stdin`, takes and allocates into two local variables. Afterwards, the function `fgets` with arguments will be called and stores the value into the global variable `c(0x08049960)`, and the string `~~` will be printed out.
+By analyzing the main function, the main function takes arguments(`argv`) from `stdin`, takes and allocates into two local variables. Afterwards, the function `fgets` with arguments will be called and stores the value into the global variable `c(0x08049960)`, and the string `~~` will be printed out.
 
 But the goal is to get the flag, and the program doesn't seem to print out flags in any point without exploiting them.
 

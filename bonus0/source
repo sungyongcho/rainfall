@@ -5,8 +5,7 @@ void p(char *a, char *b);
   puts(b);
   read(0, buf, 0x1000);
   *strchr(buf, 0xa) = 0;
-
-  strncpy(name, buf, 20);
+  strncpy(a, buf, 20);
 }
 
 

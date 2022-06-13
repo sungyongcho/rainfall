@@ -14,10 +14,9 @@ Walk through each level myself at 42: check flag, commands, reading
 
 At 42:
 - check once more for XXX
-- delete peda_setup.sh
-- delete delete-me
-- delete .vscode
-- delete this file
 - commit
 - new branch
-- branch and delete bonus folders
+- delete bonus folders
+- delete .vscode
+- delete peda_setup.sh
+- delete this file

@@ -33,7 +33,7 @@ In solving Rainfall's puzzles (including level 0), we generally relied on the fo
 
 1. Try running the binary with various arguments and note the results
 2. Use GDB to disassemble the functions we found with `info functions` in GDB.
-3. Manually reverse-engineer the assembly into something similar in C
+3. Manually reverse-engineer the assembly into something similar in C (and in some cases resorting to [Hopper](https://www.hopperapp.com/))
 4. Research any vulnerable functions found in the disassembly/reverse-engineering (`printf`, `strcpy`, etc.)
 5. Use GDB and PEDA while the program is running to trace functionality view stack/memory addresses.
 6. Exploit any vulnerabilities found
@@ -47,10 +47,10 @@ Any reverse-engineered C code in this project is not necessarily complete and ha
 
 ## The exploit
 
-Once logged in, you will see a binary called `level0`.
+Once logged in (password `level0`), you will see a binary called `level0`.
 
 ```
-ssh level0@localhost -p 4444
+$ssh level0@localhost -p 4444
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -78,9 +78,9 @@ total 732
 -rwsr-x---+ 1 level1 users 747441 Mar  6  2016 level0
 ```
 
-XXX: add something about the s flag
+As will be the case for all of these levels, there is an `s` flag on the file meaning it will be run as the owner of the file. (In this case, that is user `level1`, the owner of the next level.)
 
-Let's check the binary with the GDB...
+Let's check the binary with the GDB.
 
 ```
 level0@RainFall:~$ gdb level0
@@ -152,15 +152,15 @@ gdb-peda$
 ```
 
 While looking through the assembly code, the following functions are called that are labeled with bracket notation (`<>`) on the right side of the assembly code:
-- atoi
-- strdup
-- strdup
-- getegid
-- geteuid
-- setresgid
-- setresuid
-- execve
-- fwrite
+- `atoi`
+- `strdup`
+- `strdup`
+- `getegid`
+- `geteuid`
+- `setresgid`
+- `setresuid`
+- `execve`
+- `fwrite`
 
 Below is the first segment of code that creates the stack frame:
 ```

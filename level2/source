@@ -10,8 +10,8 @@ void  p()
   fflush(stdout);
   gets(a);
 
-  b = __builtin_return_address(0); // XXX: how did we get this?
-  if ((0xb000000 & b) != 0xb0000000)
+  # this is referring to the eip register here
+  if ((0xb000000 & eip) != 0xb0000000)
   {
     printf("(%p)\n", a);
     exit(1);

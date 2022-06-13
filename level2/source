@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-void  p()
-{
+void  p() {
   char a[64];
   unsigned int b;
 
@@ -11,8 +6,7 @@ void  p()
   gets(a);
 
   # this is referring to the eip register here
-  if ((0xb000000 & eip) != 0xb0000000)
-  {
+  if ((0xb000000 & eip) != 0xb0000000) {
     printf("(%p)\n", a);
     exit(1);
   }
@@ -21,8 +15,7 @@ void  p()
   return;
 }
 
-int main()
-{
+int main() {
   p();
   return(0);
 }

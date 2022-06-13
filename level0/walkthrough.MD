@@ -43,6 +43,8 @@ In solving Rainfall's puzzles (including level 0), we generally relied on the fo
 
 Any reverse-engineered C code in this project is not necessarily complete and has not been tested. It serves only to better understand the respective binary's functionality.
 
+It's also possible that the exact commands in this walkthrough will not work if the setup of the computer is slightly different. That said, following this walkthrough and re-calculating the addresses/commands will work.
+
 # Level 0
 
 ## The exploit

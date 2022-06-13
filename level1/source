@@ -9,7 +9,7 @@ void run(){
 
 int main(int argc, char *argv[])
 {
-    char a[64]; // XXX: check
+    char a[64];
     gets(a);
     return (0);
 }

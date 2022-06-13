@@ -259,7 +259,7 @@ Stopped reason: SIGSEGV
 gdb-peda$
 ```
 
-It turns out that when you're calling an object function in C++, you need to dereference the `EIP` pointer twice. In order to take this into account, we'll move our shellcode over by enough space (4 bytes) to point to the start of it. Here's the new payload composition.
+Note that when this crashes, `EIP` is set to `0x6850c031`, which is the first 8 bytes of our shellcode. It turns out that when you're calling an object function in C++, you need to dereference the `EIP` pointer twice. In order to take this into account, we'll move our shellcode over by enough space (4 bytes) to point to the start of it. Here's the new payload composition:
 
 ```
 [ pointer to shellcode ][ shellcode + padding up to 108 bytes ][ pointer to start ]

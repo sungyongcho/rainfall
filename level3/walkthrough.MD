@@ -3,7 +3,7 @@
 Once logged in, you will see a binary `level3`.
 
 ```
-$ ssh level3@localhost -p 4242
+$ ssh level3@localhost -p 4444
 	  _____       _       ______    _ _
 	 |  __ \     (_)     |  ____|  | | |
 	 | |__) |__ _ _ _ __ | |__ __ _| | |

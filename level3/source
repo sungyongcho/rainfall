@@ -34,7 +34,7 @@ void v() {
 
   // char *fgets(char *s, int size, FILE *stream);
   fgets(buffer, 512, stdin); // stdin = 0, stdout = 1, stderr = 2
-  printf(buffer); // FSA
+  printf(buffer);            // FSA possible
   if (m == 64)
   {
     // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);

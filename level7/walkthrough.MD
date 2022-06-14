@@ -25,7 +25,6 @@ level7@localhost's password:
 
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level7/level7
-level7@RainFall:~$
 level7@RainFall:~$ ls
 level7
 ```
@@ -33,16 +32,13 @@ level7
 Let's run this and see what it does.
 
 ```
-level7@RainFall:~$ ls
-level7
 level7@RainFall:~$ ./level7
 Segmentation fault (core dumped)
 level7@RainFall:~$ ./level7 aaaaaaaaaaaaaaaaaa
 Segmentation fault (core dumped)
-level7@RainFall:~$
 ```
 
-It gives segmentation fault, and we want to avoid that, so let's take a look at the binary.
+It has a segmentation fault, and we want to avoid that, so let's take a look at the binary.
 
 ```
 level7@RainFall:~$ gdb ./level7
@@ -118,9 +114,9 @@ End of assembler dump.
 gdb-peda$
 ```
 
-By analyzing the main function, the main function takes arguments(`argv`) from `stdin`, takes and allocates into two local variables. Afterwards, the function `fgets` with arguments will be called and stores the value into the global variable `c(0x08049960)`, and the string `~~` will be printed out.
+The `main` function takes arguments (`argv`) and allocates them into two local variables. Afterwards, it calls the function `fgets` to read the `level8/.pass` file, storing the value into the global variable `c` at address `0x08049960`. Finally, the string `~~` will be printed out.
 
-But the goal is to get the flag, and the program doesn't seem to print out flags without an exploit.
+The goal is to get the flag, and the program doesn't seem to print out flags without an exploit.
 
 ```
 level7@RainFall:~$ ./level7 aaaa bbbb
@@ -159,15 +155,13 @@ Dump of assembler code for function m:
 End of assembler dump.
 ```
 
-By decompiling the assembly, the function calls out `time`, and prints out the value from given parameters.
+By decompiling the assembly, we can see that the function prints out the value of `c` with the result of a `time` call.
 
-During the first call to `strcpy`, we can overwrite the address used as destination for the second `strcpy` (`second[1]`) => we want to overwrite function puts() GOT address to call function `m` instead.
+During the first call to `strcpy`, we can overwrite the address used as destination for the second `strcpy` (`second[1]`). By doing this, we can overwrite function `puts` GOT address to call function `m` instead.
 
 In order to do, it is necessary to find out the offset.
 
-By using a [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), it is easy to find the offset.
-
-By using the 'pattern generator', the offset is 20
+By using a [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), it is easy to find the offset. Here, we find the offset is 20. (This offset is small because `malloc` places items in memory near each other.)
 
 ```
 level7@RainFall:~$ ltrace ./level7 Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2A
@@ -186,7 +180,7 @@ After having figured out how to overwrite the `second[1]` pointer in the first p
 
 In short, instead of calling `puts`, we want to call `m`. The address for `puts` is cached on the GOT and we fill that cache before the real address gets checked.
 
-The address for `puts` can be easily found on gdb, anc can be checked by using `ltrace`.
+The address for `puts` can be easily found with gdb and can be checked by using `ltrace`.
 
 ```
 All functions matching regular expression "puts":
@@ -219,7 +213,7 @@ fgets( <unfinished ...>
 +++ killed by SIGSEGV +++
 ```
 
-As found out above, the address for function `m()` is `0x080484f4`, so the payload needs to be set up as below:
+As found above, the address for function `m()` is `0x080484f4`, so the payload needs to be set up as below:
 
 ```
     padding (20 bytes) + GOT address (4 bytes)   +   m() function address (4 bytes)

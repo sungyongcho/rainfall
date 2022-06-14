@@ -157,11 +157,11 @@ End of assembler dump.
 
 By decompiling the assembly, we can see that the function prints out the value of `c` with the result of a `time` call.
 
-During the first call to `strcpy`, we can overwrite the address used as destination for the second `strcpy` (`second[1]`). By doing this, we can overwrite function `puts` GOT address to call function `m` instead.
+During the first call to `strcpy`, we can overwrite the address used as destination for the second `strcpy` (`second[1]`). By doing this, we can overwrite the `puts` function GOT address to call function `m` instead.
 
 In order to do, it is necessary to find out the offset.
 
-By using a [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), it is easy to find the offset. Here, we find the offset is 20. (This offset is small because `malloc` places items in memory near each other.)
+By using a [buffer overflow pattern generator](https://wiremask.eu/tools/buffer-overflow-pattern-generator/), we can find the offset. Here, we find the offset is 20. (This offset is small because `malloc` places items in memory near each other.)
 
 ```
 level7@RainFall:~$ ltrace ./level7 Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2A
@@ -176,9 +176,9 @@ strcpy(0x37614136, NULL <unfinished ...>
 +++ killed by SIGSEGV +++
 ```
 
-After having figured out how to overwrite the `second[1]` pointer in the first part of this exploit, we then need to overwrite the `puts` GOT (Global Offset Table) address with a pointer to `m`. (See level 5 walkthrough for an explanation of GOT)
+After having figured out how to overwrite the `second[1]` pointer, we need to overwrite the `puts` GOT (Global Offset Table) address with a pointer to `m`. (See level 5 walkthrough for an explanation of GOT.)
 
-In short, instead of calling `puts`, we want to call `m`. The address for `puts` is cached on the GOT and we fill that cache before the real address gets checked.
+In short, instead of calling `puts`, we want to call `m`. The address for `puts` is cached on the GOT and we fill that cache before the real address gets filled in.
 
 The address for `puts` can be easily found with gdb and can be checked by using `ltrace`.
 

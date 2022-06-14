@@ -236,14 +236,14 @@ service
 0x804a008, 0x804a018
 ```
 
-By giving an input of service after putting the auth, we can see the address of the service, and they are very close. With `malloc`, each pointer is placed right after the prev ones with some padding in between.
+By giving an input of service after putting the auth, we can see the address of the service, and they are very close. With `malloc`, each pointer is placed right after the previous ones with some padding in between.
 
-So, to solve the problem, in other words, to get `auth[32]` value set to not zero, we just need to get `auth[32]` to land within the `service` string.
+To solve the problem and to set `auth[32]` value to not zero, we just need to get `auth[32]` to land within the `service` string. Here's a visualization of the memory as it is set during the exploit.
 
 ```
 The memory: auth            service123456789012345a
-						^               ^                     ^
-						0x804a008       0x804a018             auth[32]
+            ^               ^                     ^
+            0x804a008       0x804a018             auth[32]
 ```
 
 The exploit in action:

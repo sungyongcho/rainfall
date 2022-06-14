@@ -1,5 +1,3 @@
-// XXX: test on Teo's laptop with hopper
-
 char *service = NULL;
 char *auth = NULL;
 

@@ -1,3 +1,18 @@
+// Dump of assembler code for function p:
+//    0x08048444 <+0>:	push   ebp
+//    0x08048445 <+1>:	mov    ebp,esp
+//    0x08048447 <+3>:	sub    esp,0x18
+//    0x0804844a <+6>:	mov    eax,DWORD PTR [ebp+0x8]
+//    0x0804844d <+9>:	mov    DWORD PTR [esp],eax
+//    0x08048450 <+12>:	call   0x8048340 <printf@plt>
+//    0x08048455 <+17>:	leave
+//    0x08048456 <+18>:	ret
+// End of assembler dump.
+
+void p(char *str) {
+  printf(str);
+}
+
 // Dump of assembler code for function n:
 //    0x08048457 <+0>:	push   ebp
 //    0x08048458 <+1>:	mov    ebp,esp
@@ -33,7 +48,7 @@ void n(void) {
   // char *fgets(char *s, int size, FILE *stream);
   fgets(buffer, 512, stdin);
 
-  p(buffer); // XXX: add disassembled of p
+  p(buffer);
 
   if (m == 16930116) {
     system("/bin/cat /home/user/level5/.pass");

